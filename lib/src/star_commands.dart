@@ -10,20 +10,20 @@ import 'package:esc_pos_utils/src/commands.dart';
 class StarCommands extends Commands {
   StarCommands()
       : super(
-          cInit: '',
+          cInit: '${Commands.esc}@',
           cBeep: '',
           // Beeper [count] [duration]
 
           /// Mech. Control
-          cCutFull: '${Commands.gs}d2',
+          cCutFull: '${Commands.esc}d2',
           // Full cut
-          cCutPart: '${Commands.gs}d3',
+          cCutPart: '${Commands.esc}d3',
           // Partial cut
 
           /// Character
-          cReverseOn: '${Commands.gs}4',
+          cReverseOn: '${Commands.esc}4',
           // Turn white/black reverse print mode on
-          cReverseOff: '${Commands.gs}5',
+          cReverseOff: '${Commands.esc}5',
           // Turn white/black reverse print mode off
           cSizeGSn: '',
           // Select character size [N]
@@ -31,9 +31,9 @@ class StarCommands extends Commands {
           // Select character size [N]
           cUnderlineOff: '${Commands.esc}-',
           // Turns off underline mode
-          cUnderline1dot: '',
+          cUnderline1dot: '${Commands.esc}-\x01',
           // Turns on underline mode (1-dot thick)
-          cUnderline2dots: '',
+          cUnderline2dots: '${Commands.esc}-\x02',
           // Turns on underline mode (2-dots thick)
           cBoldOn: '${Commands.esc}E',
           // Turn emphasized mode on
@@ -49,17 +49,17 @@ class StarCommands extends Commands {
           // Turn 90° clockwise rotation mode off
           cCodeTable: '',
           // Select character code table [N]
-          cKanjiOn: '${Commands.fs}p',
+          cKanjiOn: '${Commands.esc}p',
           // Select Kanji character mode
-          cKanjiOff: '${Commands.fs}q',
+          cKanjiOff: '${Commands.esc}q',
           // Cancel Kanji character mode
 
           /// Print Position
-          cAlignLeft: '${Commands.esc}a0',
+          cAlignLeft: '${Commands.esc}${Commands.gs}a0',
           // Left justification
-          cAlignCenter: '${Commands.esc}a1',
+          cAlignCenter: '${Commands.esc}${Commands.gs}a1',
           // Centered
-          cAlignRight: '${Commands.esc}a2',
+          cAlignRight: '${Commands.esc}${Commands.gs}a2',
           // Right justification
           cPos: '${Commands.esc}${Commands.gs}A',
           // Set absolute print position [nL] [nH]

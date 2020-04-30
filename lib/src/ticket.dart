@@ -23,7 +23,6 @@ import 'qrcode.dart';
 class Ticket {
   Commands _cmds;
   Ticket(this._paperSize, EmulationType type) {
-    reset();
     switch(type){
       case EmulationType.star:
         _cmds = StarCommands();
@@ -32,6 +31,7 @@ class Ticket {
         _cmds = PosCommands();
         break;
     }
+    reset();
   }
 
   // Output bytecode
