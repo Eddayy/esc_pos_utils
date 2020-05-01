@@ -15,9 +15,11 @@ class StarCommands extends Commands {
           // Beeper [count] [duration]
 
           /// Mech. Control
-          cCutFull: '${Commands.esc}d2',
+          cCutFull: '${Commands.esc}d0',
+          cCutLongFull: '${Commands.esc}d2',
           // Full cut
-          cCutPart: '${Commands.esc}d3',
+          cCutPart: '${Commands.esc}d1',
+          cCutLongPart: '${Commands.esc}d3',
           // Partial cut
 
           /// Character

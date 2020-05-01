@@ -19,7 +19,9 @@ abstract class Commands {
 
 // Mech. Control
   final String cCutFull; // Full cut
+  final String cCutLongFull; // feed up and then Full cut
   final String cCutPart; // Partial cut
+  final String cCutLongPart; // feed up and then Partial cut
 
 // Character
   final String cReverseOn; // Turn white/black reverse print mode on
@@ -73,7 +75,9 @@ abstract class Commands {
     @required this.cInit,
     @required this.cBeep,
     @required this.cCutFull,
+    @required this.cCutLongFull,
     @required this.cCutPart,
+    @required this.cCutLongPart,
     @required this.cReverseOn,
     @required this.cReverseOff,
     @required this.cSizeGSn,
