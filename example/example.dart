@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:esc_pos_utils/esc_pos_utils.dart';
 
 Future<void> main() async {
-  final Ticket ticket = Ticket(PaperSize.mm80);
+  final Ticket ticket = Ticket(PaperSize.mm80, EmulationType.esc_pos);
 
   ticket.text(
       'Regular: aA bB cC dD eE fF gG hH iI jJ kK lL mM nN oO pP qQ rR sS tT uU vV wW xX yY zZ');

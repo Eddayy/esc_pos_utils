@@ -6,6 +6,7 @@
  * See LICENSE for distribution and usage details.
  */
 
+enum EmulationType { star, esc_pos }
 enum PosAlign { left, center, right }
 enum PosCutMode { full, partial }
 enum PosFontType { fontA, fontB }
@@ -18,6 +19,7 @@ enum PosImageFn { bitImageRaster, graphics }
 
 class PosTextSize {
   const PosTextSize._internal(this.value);
+
   final int value;
   static const size1 = PosTextSize._internal(1);
   static const size2 = PosTextSize._internal(2);
@@ -34,6 +36,7 @@ class PosTextSize {
 
 class PaperSize {
   const PaperSize._internal(this.value);
+
   final int value;
   static const mm58 = PaperSize._internal(1);
   static const mm80 = PaperSize._internal(2);
@@ -43,6 +46,7 @@ class PaperSize {
 
 class PosBeepDuration {
   const PosBeepDuration._internal(this.value);
+
   final int value;
   static const beep50ms = PosBeepDuration._internal(1);
   static const beep100ms = PosBeepDuration._internal(2);
@@ -57,6 +61,7 @@ class PosBeepDuration {
 
 class PosCodeTable {
   const PosCodeTable(this.value);
+
   final int value;
 
   /// PC437 - U.S.A., Standard Europe

@@ -8,18 +8,29 @@
 
 import 'dart:convert';
 import 'dart:typed_data' show Uint8List;
+import 'package:esc_pos_utils/src/commands.dart';
+import 'package:esc_pos_utils/src/pos_commands.dart';
 import 'package:gbk_codec/gbk_codec.dart';
 import 'package:hex/hex.dart';
 import 'package:image/image.dart';
 import 'barcode.dart';
-import 'commands.dart';
+import 'star_commands.dart';
 import 'enums.dart';
 import 'pos_column.dart';
 import 'pos_styles.dart';
 import 'qrcode.dart';
 
 class Ticket {
-  Ticket(this._paperSize) {
+  Commands _cmds;
+  Ticket(this._paperSize, EmulationType type) {
+    switch(type){
+      case EmulationType.star:
+        _cmds = StarCommands();
+        break;
+      case EmulationType.esc_pos:
+        _cmds = PosCommands();
+        break;
+    }
     reset();
   }
 
@@ -40,7 +51,7 @@ class Ticket {
     _codeTable = codeTable;
     if (codeTable != null) {
       bytes += Uint8List.fromList(
-        List.from(cCodeTable.codeUnits)..add(codeTable.value),
+        List.from(_cmds.cCodeTable.codeUnits)..add(codeTable.value),
       );
       _styles = _styles.copyWith(codeTable: codeTable);
     }
@@ -52,7 +63,7 @@ class Ticket {
     _font = font;
     if (font != null) {
       _maxCharsPerLine = maxCharsPerLine ?? _getMaxCharsPerLine(font);
-      bytes += font == PosFontType.fontB ? cFontB.codeUnits : cFontA.codeUnits;
+      bytes += font == PosFontType.fontB ? _cmds.cFontB.codeUnits : _cmds.cFontA.codeUnits;
       _styles = _styles.copyWith(fontType: font);
     }
   }
@@ -73,37 +84,37 @@ class Ticket {
   void setStyles(PosStyles styles, {bool isKanji = false}) {
     if (styles.align != _styles.align) {
       bytes += latin1.encode(styles.align == PosAlign.left
-          ? cAlignLeft
-          : (styles.align == PosAlign.center ? cAlignCenter : cAlignRight));
+          ? _cmds.cAlignLeft
+          : (styles.align == PosAlign.center ? _cmds.cAlignCenter : _cmds.cAlignRight));
       _styles = _styles.copyWith(align: styles.align);
     }
 
     if (styles.bold != _styles.bold) {
-      bytes += styles.bold ? cBoldOn.codeUnits : cBoldOff.codeUnits;
+      bytes += styles.bold ? _cmds.cBoldOn.codeUnits : _cmds.cBoldOff.codeUnits;
       _styles = _styles.copyWith(bold: styles.bold);
     }
     if (styles.turn90 != _styles.turn90) {
-      bytes += styles.turn90 ? cTurn90On.codeUnits : cTurn90Off.codeUnits;
+      bytes += styles.turn90 ? _cmds.cTurn90On.codeUnits : _cmds.cTurn90Off.codeUnits;
       _styles = _styles.copyWith(turn90: styles.turn90);
     }
     if (styles.reverse != _styles.reverse) {
-      bytes += styles.reverse ? cReverseOn.codeUnits : cReverseOff.codeUnits;
+      bytes += styles.reverse ? _cmds.cReverseOn.codeUnits : _cmds.cReverseOff.codeUnits;
       _styles = _styles.copyWith(reverse: styles.reverse);
     }
     if (styles.underline != _styles.underline) {
       bytes +=
-          styles.underline ? cUnderline1dot.codeUnits : cUnderlineOff.codeUnits;
+          styles.underline ? _cmds.cUnderline1dot.codeUnits : _cmds.cUnderlineOff.codeUnits;
       _styles = _styles.copyWith(underline: styles.underline);
     }
 
     // Set font
     if (styles.fontType != null && styles.fontType != _styles.fontType) {
       bytes += styles.fontType == PosFontType.fontB
-          ? cFontB.codeUnits
-          : cFontA.codeUnits;
+          ? _cmds.cFontB.codeUnits
+          : _cmds.cFontA.codeUnits;
       _styles = _styles.copyWith(fontType: styles.fontType);
     } else if (_font != null && _font != _styles.fontType) {
-      bytes += _font == PosFontType.fontB ? cFontB.codeUnits : cFontA.codeUnits;
+      bytes += _font == PosFontType.fontB ? _cmds.cFontB.codeUnits : _cmds.cFontA.codeUnits;
       _styles = _styles.copyWith(fontType: _font);
     }
 
@@ -111,7 +122,7 @@ class Ticket {
     if (styles.height.value != _styles.height.value ||
         styles.width.value != _styles.width.value) {
       bytes += Uint8List.fromList(
-        List.from(cSizeGSn.codeUnits)
+        List.from(_cmds.cSizeGSn.codeUnits)
           ..add(PosTextSize.decSize(styles.height, styles.width)),
       );
       _styles = _styles.copyWith(height: styles.height, width: styles.width);
@@ -120,22 +131,22 @@ class Ticket {
     // Set local code table
     if (styles.codeTable != null && styles.codeTable != _styles.codeTable) {
       bytes += Uint8List.fromList(
-        List.from(cCodeTable.codeUnits)..add(styles.codeTable.value),
+        List.from(_cmds.cCodeTable.codeUnits)..add(styles.codeTable.value),
       );
       _styles =
           _styles.copyWith(align: styles.align, codeTable: styles.codeTable);
     } else if (_codeTable != null && _codeTable != _styles.codeTable) {
       bytes += Uint8List.fromList(
-        List.from(cCodeTable.codeUnits)..add(_codeTable.value),
+        List.from(_cmds.cCodeTable.codeUnits)..add(_codeTable.value),
       );
       _styles = _styles.copyWith(align: styles.align, codeTable: _codeTable);
     }
 
     // Set Kanji mode
     if (isKanji) {
-      bytes += cKanjiOn.codeUnits;
+      bytes += _cmds.cKanjiOn.codeUnits;
     } else {
-      bytes += cKanjiOff.codeUnits;
+      bytes += _cmds.cKanjiOff.codeUnits;
     }
   }
 
@@ -196,7 +207,7 @@ class Ticket {
 
     // Position
     bytes += Uint8List.fromList(
-      List.from(cPos.codeUnits)..addAll([hexPair[1], hexPair[0]]),
+      List.from(_cmds.cPos.codeUnits)..addAll([hexPair[1], hexPair[0]]),
     );
 
     setStyles(styles, isKanji: isKanji);
@@ -207,7 +218,7 @@ class Ticket {
   /// Sens raw command(s)
   void rawBytes(List<int> cmd, {bool isKanji = false}) {
     if (!isKanji) {
-      bytes += cKanjiOff.codeUnits;
+      bytes += _cmds.cKanjiOff.codeUnits;
     }
     bytes += Uint8List.fromList(cmd);
   }
@@ -304,11 +315,11 @@ class Ticket {
   /// If [codeTable] is null, global code table is used.
   /// If global code table is null, default printer code table is used.
   void printCodeTable({PosCodeTable codeTable}) {
-    bytes += cKanjiOff.codeUnits;
+    bytes += _cmds.cKanjiOff.codeUnits;
 
     if (codeTable != null) {
       bytes += Uint8List.fromList(
-        List.from(cCodeTable.codeUnits)..add(codeTable.value),
+        List.from(_cmds.cCodeTable.codeUnits)..add(codeTable.value),
       );
     }
 
@@ -376,7 +387,7 @@ class Ticket {
     }
 
     bytes += Uint8List.fromList(
-      List.from(cBeep.codeUnits)..addAll([beepCount, duration.value]),
+      List.from(_cmds.cBeep.codeUnits)..addAll([beepCount, duration.value]),
     );
 
     beep(n: n - 9, duration: duration);
@@ -384,7 +395,7 @@ class Ticket {
 
   /// Clear the buffer and reset text styles
   void reset() {
-    bytes += cInit.codeUnits;
+    bytes += _cmds.cInit.codeUnits;
     _styles = PosStyles();
     setGlobalCodeTable(_codeTable);
     setGlobalFont(_font);
@@ -405,7 +416,7 @@ class Ticket {
   void feed(int n) {
     if (n >= 0 && n <= 255) {
       bytes += Uint8List.fromList(
-        List.from(cFeedN.codeUnits)..add(n),
+        List.from(_cmds.cFeedN.codeUnits)..add(n),
       );
     }
   }
@@ -413,7 +424,7 @@ class Ticket {
   /// Reverse feed for [n] lines (if supported by the priner)
   void reverseFeed(int n) {
     bytes += Uint8List.fromList(
-      List.from(cReverseFeedN.codeUnits)..add(n),
+      List.from(_cmds.cReverseFeedN.codeUnits)..add(n),
     );
   }
 
@@ -423,9 +434,9 @@ class Ticket {
   void cut({PosCutMode mode = PosCutMode.full}) {
     emptyLines(5);
     if (mode == PosCutMode.partial) {
-      bytes += cCutPart.codeUnits;
+      bytes += _cmds.cCutPart.codeUnits;
     } else {
-      bytes += cCutFull.codeUnits;
+      bytes += _cmds.cCutFull.codeUnits;
     }
   }
 
@@ -508,7 +519,7 @@ class Ticket {
     const int densityByte =
         (highDensityHorizontal ? 1 : 0) + (highDensityVertical ? 32 : 0);
 
-    final List<int> header = List.from(cBitImg.codeUnits);
+    final List<int> header = List.from(_cmds.cBitImg.codeUnits);
     header.add(densityByte);
     header.addAll(_intLowHigh(heightPx, 2));
 
@@ -605,14 +616,14 @@ class Ticket {
       final int densityByte =
           (highDensityVertical ? 0 : 1) + (highDensityHorizontal ? 0 : 2);
 
-      final List<int> header = List.from(cRasterImg2.codeUnits);
+      final List<int> header = List.from(_cmds.cRasterImg2.codeUnits);
       header.add(densityByte); // m
       header.addAll(_intLowHigh(widthBytes, 2)); // xL xH
       header.addAll(_intLowHigh(heightPx, 2)); // yL yH
       bytes += List.from(header)..addAll(resterizedData);
     } else if (imageFn == PosImageFn.graphics) {
       // 'GS ( L' - FN_112 (Image data)
-      final List<int> header1 = List.from(cRasterImg.codeUnits);
+      final List<int> header1 = List.from(_cmds.cRasterImg.codeUnits);
       header1.addAll(_intLowHigh(widthBytes * heightPx + 10, 2)); // pL pH
       header1.addAll([48, 112, 48]); // m=48, fn=112, a=48
       header1.addAll([1, 1]); // bx=1, by=1
@@ -622,7 +633,7 @@ class Ticket {
       bytes += List.from(header1)..addAll(resterizedData);
 
       // 'GS ( L' - FN_50 (Run print)
-      final List<int> header2 = List.from(cRasterImg.codeUnits);
+      final List<int> header2 = List.from(_cmds.cRasterImg.codeUnits);
       header2.addAll([2, 0]); // pL pH
       header2.addAll([48, 50]); // m fn[2,50]
       bytes += List.from(header2);
@@ -646,24 +657,24 @@ class Ticket {
     setStyles(PosStyles().copyWith(align: align));
 
     // Set text position
-    bytes += cBarcodeSelectPos.codeUnits + [textPos.value];
+    bytes += _cmds.cBarcodeSelectPos.codeUnits + [textPos.value];
 
     // Set font
     if (font != null) {
-      bytes += cBarcodeSelectFont.codeUnits + [font.value];
+      bytes += _cmds.cBarcodeSelectFont.codeUnits + [font.value];
     }
 
     // Set width
     if (width != null && width >= 0) {
-      bytes += cBarcodeSetW.codeUnits + [width];
+      bytes += _cmds.cBarcodeSetW.codeUnits + [width];
     }
     // Set height
     if (height != null && height >= 1 && height <= 255) {
-      bytes += cBarcodeSetH.codeUnits + [height];
+      bytes += _cmds.cBarcodeSetH.codeUnits + [height];
     }
 
     // Print barcode
-    final header = cBarcodePrint.codeUnits + [barcode.type.value];
+    final header = _cmds.cBarcodePrint.codeUnits + [barcode.type.value];
     if (barcode.type.value <= 6) {
       // Function A
       bytes += header + barcode.data + [0];
@@ -680,16 +691,16 @@ class Ticket {
       QRCorrection cor = QRCorrection.L}) {
     // Set alignment
     setStyles(PosStyles().copyWith(align: align));
-    QRCode qr = QRCode(text, size, cor);
+    QRCode qr = QRCode(text, size, cor, _cmds);
     bytes += qr.bytes;
   }
 
   /// Open cash drawer
   void drawer({PosDrawer pin = PosDrawer.pin2}) {
     if (pin == PosDrawer.pin2) {
-      bytes += cCashDrawerPin2.codeUnits;
+      bytes += _cmds.cCashDrawerPin2.codeUnits;
     } else {
-      bytes += cCashDrawerPin5.codeUnits;
+      bytes += _cmds.cCashDrawerPin5.codeUnits;
     }
   }
 
